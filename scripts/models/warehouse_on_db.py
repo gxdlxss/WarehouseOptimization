@@ -13,6 +13,7 @@ def Override(func):
 class Warehouse(AbstractWarehouse):
     def __init__(self):
         self.db = Database()
+        self.size = (0, 0)
         self.workers = 1
 
     def __get_cell(self, cell: tuple[int, int]):
@@ -124,11 +125,7 @@ class Warehouse(AbstractWarehouse):
 
     @Override
     def generate_new_request(self) -> SelectionRequest:
-        products = self.db.get_by_prompt(
-            '''
-            SELECT * FROM Products
-            '''
-        )
+        products = self.db.get_all_products()
         products = [Product(*p) for p in products]
         size = random.randint(1, max(1, len(products) // 2))
         result = list()
@@ -137,3 +134,43 @@ class Warehouse(AbstractWarehouse):
             products.remove(product)
             result.append((product, random.randint(1, 10)))
         return SelectionRequest(*result)
+
+    @Override
+    def fill(self) -> None:
+        cells = self.db.get_all_cells()
+        products = self.db.get_all_products()
+        products = [p[0] for p in products]
+        for cell in cells:
+            if 0.5 >= random.random():
+                product = random.choice(products)
+                self.db.execute(
+                    '''
+                    INSERT INTO Warehouse (sku, count, cell_id) VALUES (?, ?, ?)
+                    ''',
+                    params=(product, 64, cell)
+                )
+
+    @Override
+    def build(self, layout) -> None:
+        self.db.execute(
+            '''
+            DELETE * FROM Warehouse
+            '''
+        )
+        self.db.execute(
+            '''
+            DELETE * FROM Cells
+            '''
+        )
+        self.size = (len(layout), len(layout[0]))
+        for x in range(self.size[0]):
+            for y in range(self.size[1]):
+                if layout[x][y]:
+                    self.db.cursor.execute(
+                        '''
+                        INSERT INTO Cells (x, y) VALUES (?, ?)
+                        ''',
+                        (x, y)
+                    )
+        self.db.connection.commit()
+        self.fill()

@@ -34,3 +34,9 @@ class AbstractWarehouse(object):
 
     def generate_new_request(self) -> SelectionRequest:
         pass
+
+    def fill(self) -> None:
+        pass
+
+    def build(self, layout) -> None:
+        pass

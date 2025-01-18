@@ -1,16 +1,17 @@
 import random
+import asyncio
+import websockets
 
 from scripts.models.product import Product
 from scripts.models.warehouse_on_db import Warehouse
+from scripts.server.server import server_handler
 
 
-def run():
-    warehouse = Warehouse()
-    # warehouse.db.create_product_type(Product(random.randint(1, 100000000), random.random(), random.random()))
-    while True:
-        request = warehouse.generate_new_request()
-        print(request.get_data())
+async def main():
+    server = await websockets.serve(server_handler, "0.0.0.0", 8765)
+    print("Сервер запущен на ws://0.0.0.0:8765")
+    await server.wait_closed()
 
 
 if __name__ == '__main__':
-    run()
+    asyncio.run(main())

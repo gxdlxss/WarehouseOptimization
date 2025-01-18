@@ -52,6 +52,20 @@ class Database(object):
             '''
         )
 
+    def get_all_cells(self) -> tuple:
+        return self.get_by_prompt(
+            '''
+            SELECT id FROM Cells
+            '''
+        )
+
+    def get_all_products(self) -> tuple:
+        return self.get_by_prompt(
+            '''
+            SELECT * FROM Products
+            '''
+        )
+
     def __commit(self):
         self.connection.commit()
 
