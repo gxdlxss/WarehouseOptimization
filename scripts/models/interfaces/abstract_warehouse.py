@@ -1,4 +1,5 @@
 from scripts.models.product import Product
+from scripts.models.selection_request import SelectionRequest
 
 
 class AbstractWarehouse(object):
@@ -30,3 +31,6 @@ class AbstractWarehouse(object):
 
     def remove_worker(self) -> int:
         return self.remove_workers(1)
+
+    def generate_new_request(self) -> SelectionRequest:
+        pass

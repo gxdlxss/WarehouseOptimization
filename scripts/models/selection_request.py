@@ -6,7 +6,7 @@ class SelectionRequest(object):
         self.data = dict()
         self.add_products_from_list(args)
 
-    def add_products_from_list(self, products: Iterable) -> None:
+    def add_products_from_list(self, products) -> None:
         for element in products:
             if not isinstance(element, tuple):
                 raise Exception()
@@ -19,3 +19,6 @@ class SelectionRequest(object):
 
             product, count = element
             self.data[product] = self.data.setdefault(product, 0) + count
+
+    def get_data(self) -> tuple:
+        return tuple((key, self.data[key]) for key in self.data)
