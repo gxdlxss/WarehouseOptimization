@@ -55,7 +55,7 @@ class Database(object):
     def get_all_cells(self) -> tuple:
         return self.get_by_prompt(
             '''
-            SELECT id FROM Cells
+            SELECT * FROM Cells
             '''
         )
 

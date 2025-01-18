@@ -3,54 +3,59 @@ import websockets
 import json
 import random
 from websockets.asyncio.server import ServerConnection
-from websockets.exceptions import ConnectionClosedOK
+from websockets.exceptions import ConnectionClosed
+
+from scripts.parsers.json_parser import ParserManager
+from scripts.exceptions.json_parser_exceptions import ExecutionError
 
 connected_clients = set()
+manager = ParserManager()
 
 
 async def server_handler(websocket: ServerConnection) -> None:
     connected_clients.add(websocket)
     print(f"Клиент {websocket.id} подключился")
     try:
-        asyncio.create_task(send_on_condition(websocket))
+        asyncio.create_task(send_server_status(websocket))
 
         async for message in websocket:
             data = json.loads(message)
-            print(data)
 
-            """
-            response = {
-                "status": "ok",
-                "received": data,
-                "message": "Сообщение обработано сервером!"
-            }
-            await websocket.send(json.dumps(response))
-            """
+            try:
+                await manager.execute(data)
+            except Exception as e:
+                response = {
+                    "type": "answer",
+                    "status": "Internal Server Error",
+                    "code": 500,
+                    "message": e
+                }
+                await websocket.send(json.dumps(response))
 
-    except ConnectionClosedOK:
+    except ConnectionClosed:
         print(f"Клиент {websocket.id} отключился до завершения сессии")
     finally:
         connected_clients.remove(websocket)
 
 
-async def send_on_condition(websocket: ServerConnection) -> None:
+async def send_server_status(websocket: ServerConnection) -> None:
     while True:
         try:
-            try:
-                random_number = random.random()
+            data = await manager.execute({"type": "solve"})
 
-                if random_number > 0.9:
-                    message = {
-                        "type": "server_update",
-                        "random_number": random_number,
-                        "data": "Условие выполнено! Отправляем сообщение."
-                    }
-                    await websocket.send(json.dumps(message))
-                    print(f"Сервер отправил сообщение: {message}")
-            except ConnectionClosedOK:
-                print(f"Клиент {websocket.id} отключился")
-                break
+            if data is None:
+                await asyncio.sleep(0.1)
+                continue
 
-            await asyncio.sleep(0.1)
+            message = {
+                "type": "server_update",
+                "body": data
+            }
+            await websocket.send(json.dumps(message))
+            print(f"Сервер отправил сообщение: {message}")
+
+        except ConnectionClosed:
+            print(f"Клиент {websocket.id} отключился")
+            break
         except Exception as e:
-            print(f"Ошибка при отправке сообщений: {e}")
+            print(f"Ошибка при отправке сообщения: {e}")

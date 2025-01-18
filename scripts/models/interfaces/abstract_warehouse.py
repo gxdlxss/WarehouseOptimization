@@ -1,3 +1,5 @@
+from typing import Optional
+
 from scripts.models.product import Product
 from scripts.models.selection_request import SelectionRequest
 
@@ -39,4 +41,10 @@ class AbstractWarehouse(object):
         pass
 
     def build(self, layout) -> None:
+        pass
+
+    def is_empty_cell(self, cell: tuple[int, int]) -> bool:
+        pass
+
+    def solve(self, request: SelectionRequest) -> Optional[list]:
         pass
