@@ -7,6 +7,7 @@ from scripts.models.interfaces.abstract_warehouse import AbstractWarehouse
 from scripts.models.product import Product
 from scripts.models.selection_request import SelectionRequest
 from scripts.parsers.db_parser import Database
+from scripts.tmp_solve import Graph
 
 
 class Warehouse(AbstractWarehouse):
@@ -65,7 +66,7 @@ class Warehouse(AbstractWarehouse):
         )
         return result[0] if result else None
 
-    def __get_all_from_cell_as_set(self, cell: tuple[int, int]) -> set:
+    def __get_all_from_cell_as_dict(self, cell: tuple[int, int]) -> dict:
         """
         Получает продукты в ячейке в виде множества.
 
@@ -75,7 +76,7 @@ class Warehouse(AbstractWarehouse):
         Returns:
             set: Множество с объектами продуктов и их количеством.
         """
-        result = set()
+        result = dict()
         product = self.__get_all_from_cell(cell)
 
         if product:
@@ -84,7 +85,7 @@ class Warehouse(AbstractWarehouse):
             product = self.db.get_by_prompt(
                 f"SELECT * FROM Products WHERE sku={sku}"
             )
-            product = Product(*product)
+            product = Product(*product[0])
 
             result[product] = result.get(product, 0) + count
         return result
@@ -159,7 +160,7 @@ class Warehouse(AbstractWarehouse):
             EmptyCellException: Если ячейка пуста.
         """
         cell_id = self.__get_cell(cell)
-        cur_products = self.__get_all_from_cell_as_set(cell)
+        cur_products = self.__get_all_from_cell_as_dict(cell)
 
         if not cur_products:
             raise EmptyCellException("Нельзя удалить продукты из пустой ячейки.")
@@ -199,7 +200,7 @@ class Warehouse(AbstractWarehouse):
         if not cell_id:
             raise WarehouseException("Ячейка не существует.")
 
-        cur_products = self.__get_all_from_cell_as_set(cell)
+        cur_products = self.__get_all_from_cell_as_dict(cell)
 
         # Удаляем все текущие данные из ячейки
         self.db.execute(
@@ -347,7 +348,7 @@ class Warehouse(AbstractWarehouse):
         try:
             self.fill()  # Заполняем склад продуктами
         except WarehouseException:
-            pass
+            print("Ошибка при заполнении склада")
 
     @override
     def is_empty_cell(self, cell: tuple[int, int]) -> bool:
@@ -384,4 +385,5 @@ class Warehouse(AbstractWarehouse):
 
     @override
     def solve(self, request: SelectionRequest) -> Optional[dict]:  # todo on C++
-        pass
+        result = Graph(self).solve(request)
+        return result if result is None else {'cells': result}

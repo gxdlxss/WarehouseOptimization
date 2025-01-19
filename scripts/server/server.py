@@ -22,11 +22,10 @@ async def server_handler(websocket: ServerConnection) -> None:
     """
     connected_clients.add(websocket)  # Добавляем клиента в список подключённых
     print(f"Клиент {websocket.id} подключился")
+    # Запуск фоновой задачи для отправки статуса сервера клиенту
+    asyncio.create_task(send_server_status(websocket))
 
     try:
-        # Запуск фоновой задачи для отправки статуса сервера клиенту
-        asyncio.create_task(send_server_status(websocket))
-
         # Чтение сообщений от клиента
         async for message in websocket:
             # Парсинг JSON-сообщения
@@ -35,6 +34,7 @@ async def server_handler(websocket: ServerConnection) -> None:
             try:
                 # Выполнение запроса через менеджер
                 await manager.execute(data)
+                print(f"Сервер принял сообщение")
             except Exception as e:
                 # Обработка ошибок и отправка ответа клиенту
                 response = {
@@ -48,6 +48,8 @@ async def server_handler(websocket: ServerConnection) -> None:
     except ConnectionClosed:
         # Обработка ситуации, когда клиент разорвал соединение
         print(f"Клиент {websocket.id} отключился до завершения сессии")
+    except Exception as e:
+        print(f"Ошибка обработки запроса: {e}")
     finally:
         # Удаляем клиента из списка подключённых
         connected_clients.remove(websocket)
@@ -74,7 +76,7 @@ async def send_server_status(websocket: ServerConnection) -> None:
                 "body": data
             }
             await websocket.send(json.dumps(message))
-            print(f"Сервер отправил сообщение: {message}")
+            print(f"Сервер отправил сообщение")
 
         except ConnectionClosed:
             print(f"Клиент {websocket.id} отключился")
@@ -82,3 +84,4 @@ async def send_server_status(websocket: ServerConnection) -> None:
         except Exception as e:
             # Логирование ошибок при отправке сообщения
             print(f"Ошибка при отправке сообщения: {e}")
+        await asyncio.sleep(0.5)
