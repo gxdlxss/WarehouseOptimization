@@ -25,7 +25,7 @@ class ParserManager(object):
             "answer": do_nothing,
             "update_map": do_nothing,
             "update_workers": do_nothing,
-            "get_status": do_nothing
+            "get_status": send_current_requests
         }
 
     def __call__(self, *args, **kwargs):
@@ -92,4 +92,18 @@ async def build_map(warehouse: Warehouse, data: dict) -> None:
 
 
 async def solve(warehouse: Warehouse, data=None) -> Optional[dict]:
-    return warehouse.solve(warehouse.generate_new_request())
+    request = warehouse.generate_new_request()
+    result = warehouse.solve(request)
+    result['selection'] = request.to_json()
+    return result
+
+
+async def send_current_requests(warehouse: Warehouse, data: dict) -> None:
+    response = dict()
+    websocket = data['websocket']
+    count = data['requests_count']
+    response['type'] = 'selections'
+    response['body'] = list()
+    for _ in range(count):
+        response['body'].append(await solve(warehouse))
+    await websocket.send(json.dumps(response))

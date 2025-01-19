@@ -269,13 +269,13 @@ class Warehouse(AbstractWarehouse):
             raise EmptyListOfProductsException("В базе данных нет ни одного продукта для создания запроса")
 
         products = [Product(*p) for p in products]
-        size = random.randint(1, max(1, len(products) // 2))
+        size = random.randint(1, max(0, len(products) - 1))
         result = list()
 
         for _ in range(size):
             product = random.choice(products)
             products.remove(product)
-            result.append((product, random.randint(1, 10)))
+            result.append((product, random.randint(1, 8)))
 
         return SelectionRequest(*result)
 

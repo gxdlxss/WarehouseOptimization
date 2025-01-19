@@ -71,3 +71,6 @@ class SelectionRequest(object):
             # Вернет что-то вроде: ((product1, 5), (product2, 10))
         """
         return tuple((key, self.data[key]) for key in self.data)
+
+    def to_json(self) -> dict:
+        return {'request': {key.sku: self.data[key] for key in self.data}}

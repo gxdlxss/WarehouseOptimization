@@ -23,7 +23,7 @@ async def server_handler(websocket: ServerConnection) -> None:
     connected_clients.add(websocket)  # Добавляем клиента в список подключённых
     print(f"Клиент {websocket.id} подключился")
     # Запуск фоновой задачи для отправки статуса сервера клиенту
-    asyncio.create_task(send_server_status(websocket))
+    # asyncio.create_task(send_server_status(websocket))
 
     try:
         # Чтение сообщений от клиента
@@ -32,11 +32,10 @@ async def server_handler(websocket: ServerConnection) -> None:
             data = json.loads(message)
 
             try:
-                # Выполнение запроса через менеджер
+                data['websocket'] = websocket
                 await manager.execute(data)
                 print(f"Сервер принял сообщение")
             except Exception as e:
-                # Обработка ошибок и отправка ответа клиенту
                 response = {
                     "type": "answer",
                     "status": "Internal Server Error",
